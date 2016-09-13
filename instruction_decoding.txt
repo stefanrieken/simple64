@@ -1,0 +1,103 @@
+
+instruction := aaabbbcc
+
+cc ~= category;
+bbb ~= address mode
+aaa ~= command
+
+
+Possible address modes per category (cc)
+
+01
+
+000	(zero page,X)
+001	zero page
+010	#immediate
+011	absolute
+100	(zero page),Y
+101	zero page,X
+110	absolute,Y
+111	absolute,X
+
+
+00 or 10 (11 is nonexistent)
+
+000	#immediate
+001	zero page
+010	accumulator
+011	absolute
+101	zero page,X
+111	absolute,X
+
+Combined
+
+000	01 ? (zero page,X) : #immediate
+001	zero page
+010	01 ? #immediate : accumulator
+011	absolute
+100	(zero page),Y (only on 01)
+101	zero page,X
+110	absolute,Y (only on 01)
+111	absolute,X
+
+
+Debatable
+
+JMPabs	4C	010 011 00	=> proper absolute addressing
+JMPind	6C	011 011 00	=> not zero-page indirect, but 'absolute indirect' so unique` form
+
+
+Uncategorized instructions
+
+BRK	00	000 000 00
+JSRabs	20	001 000 00
+RTI	40	010 000 00
+RTS	60	011 000 00
+
+PHP	08	000 010 00
+PLP	28	001 010 00
+PHA	48	010 010 00
+PLA	68	011 010 00
+DEY	88	100 010 00
+TAY	A8	101 010 00
+INY	C8	110 010 00
+INX	E8	111 010 00
+
+CLC	18	000 110 00
+SEC	38	001 110 00
+CLI	58	010 110 00
+SEI	78	011 110 00
+TYA	98	100 110 00
+CLV	B8	101 110 00
+CLD	D8	110 110 00
+SED	F8	111 110 00
+
+TXA	8A	100 010 10
+TXS	9A	100 110 10
+TAX	AA	101 010 10
+TSX	BA	101 110 10
+DEX	CA	110 010 10
+NOP	EA	111 010 10
+
+
+
+
+0	0000
+1	0001
+2	0010
+3	0011
+4	0100
+5	0101
+6	0110
+7	0111
+8	1000
+9	1001
+A	1010
+B	1011
+C	1100
+D	1101
+E	1110
+F	1111
+
+
+
