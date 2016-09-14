@@ -17,7 +17,7 @@ public class Simple64 {
 	}
 	
 	private void load(Memory mem) {
-		InputStream stream = getClass().getResourceAsStream("/rainbow2.o65");
+		InputStream stream = getClass().getResourceAsStream("/rainbow.o65");
 		
 		int start = 0x0600;
 

@@ -35,7 +35,7 @@ public class Jump01 extends JumpTable {
 
 	@Override
 	public void if101(byte aaa, byte bbb, byte cc) { // LDA
-		p.a = p.alu.check(p.mem.get(p.resolveAddress(bbb)));
+		p.a = p.alu.check(p.resolveOperand(bbb,cc));
 	}
 
 	@Override

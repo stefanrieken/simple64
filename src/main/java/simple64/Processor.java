@@ -196,15 +196,17 @@ public class Processor {
 	public int resolveAddress(byte bbb) {
 		if (bbb == 0b000) { // (zero page,X)
 			// TODO does this wrap?
-			return mem.get(word((short) 0, (short) (mem.get(pc++) + x)));
+			return mem.get(word((short) (mem.get(pc++) + x), (short) 0));
 		} else if (bbb == 0b001) { // zero page
-			return mem.get(word((short) 0, mem.get(pc++)));
+			return word(mem.get(pc++), (short) 0);
 		} else if (bbb == 0b010) {
 			return mem.get(pc++);
 		} else if (bbb == 0b011) { // absolute
 			return word(mem.get(pc++), mem.get(pc++));
 		} else if (bbb == 0b100) { // (zero page), y
-			return mem.get(word((short) 0, (short) (mem.get(pc++)))) + y;
+			int zeroPageAddress = word((short) (mem.get(pc++)), (short) 0);
+			// looking for the word stored at the two consecutive zero-page locations
+			return word(mem.get(zeroPageAddress), mem.get(zeroPageAddress+1)) + y;
 		} else if (bbb == 0b110) { // absolute, y
 			return word(mem.get(pc++), mem.get(pc++)) + y;
 		} else if (bbb == 0b111) { // absolute, x
