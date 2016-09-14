@@ -64,9 +64,7 @@ public class Processor {
 	}
 
 	private void run00 (byte aaa, byte bbb, byte cc) {
-		if (bbb == 0b000) { // break, subroutine, interrupt instructions
-			breakSubroutineInterrupt(aaa);
-		} else if (bbb == (byte) 0b010) { // group of modeless instructions
+		if (bbb == (byte) 0b010) { // group of modeless instructions
 			jump00modeless1.jump(aaa, aaa, bbb, cc);
 		} else if (bbb == 0b100) { // branch instructions
 			branch(aaa);
@@ -107,7 +105,7 @@ public class Processor {
 		} else if (aaa == 0b100) { // STX
 			mem.set(resolveAddress(bbb), x);
 		} else if (aaa == 0b101) { // LDX
-			x = alu.check(mem.get(resolveAddress(bbb)));
+			x = alu.check(resolveOperand(bbb, cc));
 		} else if (aaa == 0b110) { // DEC
 			 // read and store in one operation
 			int address = resolveAddress(bbb);
@@ -116,20 +114,6 @@ public class Processor {
 			int address = resolveAddress(bbb);
 			mem.set(address, alu.inc((short) (mem.get(address))));
 		}
-	}
-
-	private void breakSubroutineInterrupt(byte aaa) {
-		if (aaa == 0b000) { // BRK
-			
-		} else if (aaa == 0b001) { // JSR abs
-			
-		} else if (aaa == 0b010) { // RTI
-			
-		} else if (aaa == 0b011) { // RTS
-			
-		}
-
-		// values with aaa == 0b1xx seem unassigned
 	}
 
 	private void branch(byte aaa) {

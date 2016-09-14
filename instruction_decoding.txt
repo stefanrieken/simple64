@@ -57,7 +57,8 @@ aaa	00		01		10
 
 Addressing modes used at 00: zeropage, absolute, indirect, zeropage,x, immediate, absolute,x
 
-The otherwise unfilled bbb=000 host a limited number of irregularly-encoded interrupt instructions (there's still room for more):
+The otherwise unfilled bbb=000 host a limited number of irregularly-encoded interrupt instructions,
+which share their 'aaa' with other ((more) regular) instructions:
 
 aaa	bbb=000 (c=00)
 ---	---

@@ -39,13 +39,13 @@ public class Jump00Modeless1 extends JumpTable {
 	}
 
 	@Override
-	public void if110(byte aaa, byte bbb, byte cc) { // INX
-		p.x = p.alu.inc(p.x);
+	public void if110(byte aaa, byte bbb, byte cc) { // INY
+		p.y = p.alu.inc(p.y);
 	}
 
 	@Override
-	public void if111(byte aaa, byte bbb, byte cc) { // INY
-		p.y = p.alu.inc(p.y);
+	public void if111(byte aaa, byte bbb, byte cc) { // INX
+		p.x = p.alu.inc(p.x);
 	}
 
 }
