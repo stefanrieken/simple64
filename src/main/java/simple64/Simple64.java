@@ -14,17 +14,19 @@ public class Simple64 {
 	}
 	
 	private void load(Memory mem) {
-		InputStream stream = getClass().getResourceAsStream("/rainbow2.o64");
+		InputStream stream = getClass().getResourceAsStream("/rainbow2.o65");
 		
 		int start = 0x0600;
 
 		try {
 			
 			int ch = stream.read();
+			int i=0;
 			while (ch != -1) {
-				mem.set(start+1, (short) ch);
+				mem.set(start+i, (short) ch);
 			
 				ch = stream.read();
+				i++;
 			}
 
 			stream.close();

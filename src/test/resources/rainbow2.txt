@@ -6,7 +6,7 @@
 ; there are only 16 colors, but the overflow doesn't matter
 ; Good, because A also doubles as our index
 
-lda $00
+lda #$00
 
 print:
 tay

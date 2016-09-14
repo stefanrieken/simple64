@@ -105,7 +105,7 @@ Here, bbb=010 is the 'accumulator' addressing mode for anything below aaa=100 (=
 This 'mode' is an irregularity in its own right. From there, four more irregular instructions are added:
 
 
-aaa	bbb=010 (cc-10)
+aaa	bbb=010 (cc=10)
 ---	---
 100	TXA	(normally STX)
 101	TAX	(normally LDX)

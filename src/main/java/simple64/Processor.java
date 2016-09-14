@@ -1,24 +1,39 @@
 package simple64;
 
+import simple64.decode.Jump00;
+import simple64.decode.Jump00Modeless1;
+import simple64.decode.Jump00Modeless2;
+import simple64.decode.Jump01;
+import simple64.decode.JumpTable;
+
+// Most of the work is in the decoding.
+// Wherever 8 different instructions can be decoded, a JumpTable is used.
+// In other cases, currently, an if-construction is still setup
 public class Processor {
 	
 	// all are implemented as shorts to easier treat them as unsigned bytes
-	short a;
-	short x;
-	short y;
+	public short a;
+	public short x;
+	public short y;
 	
 	// stack pointer
-	short sp;
+	public short sp;
 
 	short SIGN = 0b10000000;
 	short OVFL = 0b01000000;
 	short ZERO = 0b00000010;
 	short CARY = 0b00000001;
 
-	int pc;
+	public int pc;
 	
-	private Memory mem;
-	private ArithmeticLogicUnit alu;
+	public Memory mem;
+	public ArithmeticLogicUnit alu;
+	
+	private JumpTable jump00 = new Jump00(this);
+	private JumpTable jump01 = new Jump01(this);
+
+	private JumpTable jump00modeless1 = new Jump00Modeless1(this);
+	private JumpTable jump00modeless2 = new Jump00Modeless2(this);
 
 	public Processor (Memory memory, ArithmeticLogicUnit alu) {
 		this.mem = memory;
@@ -30,11 +45,12 @@ public class Processor {
 	}
 
 	public void run() {
+		System.out.printf("pc: %04x\n", pc);
 		 short opcode = mem.get(pc++);
 		
 		// using the description on http://www.llx.com/~nparker/a2/opcodes.html,
 		// split opcode in aaabbbcc
-		byte aaa = (byte) (opcode >> 4);
+		byte aaa = (byte) (opcode >> 5);
 		byte bbb = (byte) ((opcode & 0b1100) >> 2);
 		byte cc = (byte) (opcode & 0b11);
 
@@ -48,51 +64,20 @@ public class Processor {
 		if (bbb == 0b000) { // break, subroutine, interrupt instructions
 			breakSubroutineInterrupt(aaa);
 		} else if (bbb == 0b010) { // group of modeless instructions
-			modeless1(aaa);
+			jump00modeless1.jump(aaa, aaa, bbb, cc);
 		} else if (bbb == 0b100) { // branch instructions
 			branch(aaa);
 		} else if (bbb == 0b110) { // group of modeless instructions
-			modeless2(aaa);
+			jump00modeless2.jump(aaa, aaa, bbb, cc);
 		}
 
-		else if (aaa == 0b001) { // BIT
-			alu.bit(a, resolveOperand(bbb,cc));
-		} else if (aaa == 0b010) { // JMP (ind) (unique form of indirection)
-			int address = resolveAddress(bbb);
-			pc = mem.get(word(mem.get(address), mem.get(address + 1)));
-		} else if (aaa == 0b011) { // JMP (abs)
-			pc = resolveAddress(bbb);
-		} else if (aaa == 0b100) { // STY
-			mem.set(resolveAddress(bbb), y);
-		} else if (aaa == 0b101) { // LDY
-			y = alu.check(mem.get(resolveAddress(bbb)));
-		} else if (aaa == 0b110) { // CPY
-			alu.check((short) (y - resolveOperand(bbb, cc)));
-		} else if (aaa == 0b111) { // CPX
-			alu.check((short) (x - resolveOperand(bbb, cc)));
-		}
+		jump00.jump(aaa, aaa, bbb, cc);
 	}
 	
 	// Accumulator based calculations (mostly)
 	//
 	private void run01 (byte aaa, byte bbb, byte cc) {
-		if (aaa == 0b000) { // ORA
-			a = alu.or (a, resolveOperand(bbb,cc));
-		} else if (aaa == 0b001) { // AND
-			a = alu.and(a, resolveOperand(bbb,cc));
-		} else if (aaa == 0b010) { // EOR
-			a = alu.xor(a, resolveOperand(bbb,cc));
-		} else if (aaa == 0b011) { // ADC
-			a = alu.adc(a, resolveOperand(bbb,cc));
-		} else if (aaa == 0b100) { // STA
-			mem.set(resolveAddress(bbb), a);
-		} else if (aaa == 0b101) { // LDA
-			a = alu.check(mem.get(resolveAddress(bbb)));
-		} else if (aaa == 0b110) { // CMP
-			alu.cmp(a, resolveOperand(bbb,cc));
-		} else if (aaa == 0b111) { // SBC (affects N,Z,C,V)
-			a = alu.sbc(a, resolveOperand(bbb,cc));
-		}
+		jump01.jump(aaa, aaa, bbb, cc);
 	}
 
 	// Memory (sometimes: accumulator) operations
@@ -163,48 +148,6 @@ public class Processor {
 		if ((test && y == 1) || (!test && y == 0))
 			pc += relative;
 	}
-
-	// TODO oa registers
-	private void modeless1(byte aaa) {
-		if (aaa == 0b000) { // PHP
-			
-		} else if (aaa == 0b001) { // PLP
-			
-		} else if (aaa == 0b010) { // PHA
-			
-		} else if (aaa == 0b011) { // PLA
-			
-		} else if (aaa == 0b100) { // DEY
-			y = alu.dec(y);
-		} else if (aaa == 0b101) { // TAY
-			y = alu.check(y);
-		} else if (aaa == 0b110) { // INX
-			x = alu.inc(x);
-		} else if (aaa == 0b111) { // INY
-			y = alu.inc(y);
-		}
-	}
-
-	// TODO oa registers
-	private void modeless2(byte aaa) {
-		if (aaa == 0b000) { // CLC
-			
-		} else if (aaa == 0b001) { // SEC
-			
-		} else if (aaa == 0b010) { // CLI
-			
-		} else if (aaa == 0b011) { // SEI
-			
-		} else if (aaa == 0b100) { // TYA
-			a = alu.check(y);
-		} else if (aaa == 0b101) { // CLV
-			
-		} else if (aaa == 0b110) { // CLD
-			
-		} else if (aaa == 0b111) { // SED
-			
-		}
-	}
 	
 	// cc=10 TODO stack
 	private void modeless3(byte aaa) {
@@ -233,7 +176,7 @@ public class Processor {
 		
 	}
 
-	private short resolveOperand(byte bbb, byte cc) {
+	public short resolveOperand(byte bbb, byte cc) {
 		if (cc == 0b01) {
 			if (bbb == 0b010)
 				return mem.get(pc++); // immediate
@@ -247,13 +190,12 @@ public class Processor {
 		}
 	}
 	
-	private int resolveAddress(byte bbb) {
+	public int resolveAddress(byte bbb) {
 		if (bbb == 0b000) { // (zero page,X)
 			// TODO does this wrap?
 			return mem.get(word((short) 0, (short) (mem.get(pc++) + x)));
 		} else if (bbb == 0b001) { // zero page
 			return mem.get(word((short) 0, mem.get(pc++)));
-		
 		} else if (bbb == 0b010) {
 			return mem.get(pc++);
 		} else if (bbb == 0b011) { // absolute
@@ -269,7 +211,7 @@ public class Processor {
 		return 0; // shouldn't get here
 	}
 
-	private int word(short lo, short hi) {
+	public int word(short lo, short hi) {
 		return 256 * hi + lo;
 	}
 }
