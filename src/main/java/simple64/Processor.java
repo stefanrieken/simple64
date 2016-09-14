@@ -44,34 +44,37 @@ public class Processor {
 		pc = word(mem.get(0xFFFC), mem.get(0xFFFD));
 	}
 
-	public void run() {
+	public boolean run() {
 		System.out.printf("pc: %04x\n", pc);
 		 short opcode = mem.get(pc++);
+			System.out.printf("opcode: %02x\n", opcode);
 		
 		// using the description on http://www.llx.com/~nparker/a2/opcodes.html,
 		// split opcode in aaabbbcc
 		byte aaa = (byte) (opcode >> 5);
-		byte bbb = (byte) ((opcode & 0b1100) >> 2);
+		byte bbb = (byte) ((opcode & 0b11100) >> 2);
 		byte cc = (byte) (opcode & 0b11);
 
 		if (cc == 00) run00(aaa, bbb, cc);
 		else if (cc == 01) run01(aaa, bbb, cc);
 		else if (cc == 10) run10(aaa, bbb, cc);
 		// cc == 11 is nonexistent
+		
+		return opcode != 0; // option to, like 6502asm.com, stop on BRK
 	}
 
 	private void run00 (byte aaa, byte bbb, byte cc) {
 		if (bbb == 0b000) { // break, subroutine, interrupt instructions
 			breakSubroutineInterrupt(aaa);
-		} else if (bbb == 0b010) { // group of modeless instructions
+		} else if (bbb == (byte) 0b010) { // group of modeless instructions
 			jump00modeless1.jump(aaa, aaa, bbb, cc);
 		} else if (bbb == 0b100) { // branch instructions
 			branch(aaa);
 		} else if (bbb == 0b110) { // group of modeless instructions
 			jump00modeless2.jump(aaa, aaa, bbb, cc);
+		} else {
+			jump00.jump(aaa, aaa, bbb, cc);
 		}
-
-		jump00.jump(aaa, aaa, bbb, cc);
 	}
 	
 	// Accumulator based calculations (mostly)
@@ -138,12 +141,12 @@ public class Processor {
 		
 		// all branch instructions have two's complement relative addressing.
 		byte relative = (byte) mem.get(pc++);
-		
+
 		boolean test = false;
-		if (xx == 00) test = (alu.sr & SIGN) != 0;
-		if (xx == 01) test = (alu.sr & OVFL) != 0;
-		if (xx == 10) test = (alu.sr & CARY) != 0;
-		if (xx == 11) test = (alu.sr & ZERO) != 0;
+		if (xx == 0b00) test = (alu.sr & SIGN) != 0;
+		if (xx == 0b01) test = (alu.sr & OVFL) != 0;
+		if (xx == 0b10) test = (alu.sr & CARY) != 0;
+		if (xx == 0b11) test = (alu.sr & ZERO) != 0;
 
 		if ((test && y == 1) || (!test && y == 0))
 			pc += relative;

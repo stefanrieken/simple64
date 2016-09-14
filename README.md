@@ -11,8 +11,8 @@ Once that works, the peripherals will be configurable, and we will at least
 add a character output device.
 
 
-Initial setup
--------------
+Current status
+--------------
 
-In this initial setup, most non-stack-related opcodes are implemented
-but not yet tested.
+In this initial setup, most non-stack-related opcodes are implemented.
+The test cases 'rainbow' and 'rainbow2' run, and likely correct.

@@ -37,14 +37,14 @@ public class ArithmeticLogicUnit {
 
 	public short adc (short reg, short arg) {
 		short result = (short) (reg + arg);
-		result = check((short) (result + (sr & CARY) == 0 ? 0 : 1));
+		result = check((short) (result + ((sr & CARY) == 0 ? 0 : 1)));
 		set(OVFL, (reg & 0x80) == 0 && (result & 0x80) != 0); // TODO is overflow not set when sign bit changes any direction?
 		return result;
 	}
 
 	public short sbc (short reg, short arg) {
 		short result = (short) (reg - arg);
-		result = check((short) (result - (sr & CARY) == 0 ? 0 : 1));
+		result = check((short) (result - ((sr & CARY) == 0 ? 0 : 1)));
 		set(OVFL, (reg & 0x80) == 0 && (result & 0x80) != 0); // TODO is overflow not set when sign bit changes any direction?
 		return result;
 	}
@@ -97,7 +97,7 @@ public class ArithmeticLogicUnit {
 	// in case of overflow, chop off remainder
 	public short check(short arg) {
 		set(SIGN, (arg & 0x80) != 0);
-		set(ZERO, arg == 0);
+		set(ZERO, (arg & 0xFF) == 0);
 		// set(OVFL, arg > 255); // can only be checked for if old value is known
 		set(CARY, arg > 255);
 

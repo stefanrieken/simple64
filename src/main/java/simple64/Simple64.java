@@ -14,7 +14,7 @@ public class Simple64 {
 	}
 	
 	private void load(Memory mem) {
-		InputStream stream = getClass().getResourceAsStream("/rainbow2.o65");
+		InputStream stream = getClass().getResourceAsStream("/rainbow.o65");
 		
 		int start = 0x0600;
 
@@ -44,8 +44,8 @@ public class Simple64 {
 		
 		p.reset();
 		
-		while(true) {
-			p.run();
-		}
+		while(p.run()) { }
+		
+		System.out.println("Exited on BRK");
 	}
 }
