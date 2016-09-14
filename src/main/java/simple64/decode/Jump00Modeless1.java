@@ -35,7 +35,7 @@ public class Jump00Modeless1 extends JumpTable {
 
 	@Override
 	public void if101(byte aaa, byte bbb, byte cc) { // TAY
-		p.y = p.alu.check(p.y);
+		p.y = p.alu.check(p.a);
 	}
 
 	@Override

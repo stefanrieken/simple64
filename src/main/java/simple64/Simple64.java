@@ -3,10 +3,13 @@ package simple64;
 import java.io.IOException;
 import java.io.InputStream;
 
+import simple64.peripheral.SquareDisplay;
+
 public class Simple64 {
 
 	public static void main (String ... args) {
-		Memory mem = new Memory();
+		MemoryWithPeripherals mem = new MemoryWithPeripherals();
+		mem.peripherals.add(new SquareDisplay());
 		
 		Simple64 s = new Simple64();
 		s.load(mem);
@@ -14,7 +17,7 @@ public class Simple64 {
 	}
 	
 	private void load(Memory mem) {
-		InputStream stream = getClass().getResourceAsStream("/rainbow.o65");
+		InputStream stream = getClass().getResourceAsStream("/rainbow2.o65");
 		
 		int start = 0x0600;
 

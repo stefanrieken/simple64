@@ -7,12 +7,13 @@ compatibility (that is, at least initially no interrupts) and 'peripherals'
 (the 32x32, 16 colour screen memory, keyboard and entropy inputs), so that it
 can be tested against the examples already available from 6502asm.com .
 
-Once that works, the peripherals will be configurable, and we will at least
-add a character output device.
+The peripherals are configurable, so another setup can be created.
 
 
 Current status
 --------------
 
 In this initial setup, most non-stack-related opcodes are implemented.
-The test cases 'rainbow' and 'rainbow2' run, and likely correct.
+The test cases 'rainbow' and 'rainbow2' run and provide display results.
+(At the moment the display doesn't yet repaint properly.)
+
