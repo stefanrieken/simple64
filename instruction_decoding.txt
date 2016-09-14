@@ -1,3 +1,4 @@
+See http://www.llx.com/~nparker/a2/opcodes.html
 
 instruction := aaabbbcc
 
@@ -33,12 +34,90 @@ Combined
 
 000	01 ? (zero page,X) : #immediate
 001	zero page
-010	01 ? #immediate : accumulator
+010	00: not used; 01: #immediate; 10: irregular or 'accumulator'
 011	absolute
 100	(zero page),Y (only on 01)
 101	zero page,X
 110	absolute,Y (only on 01)
 111	absolute,X
+
+
+Regular / orthogonal calls per category
+
+aaa	00		01		10
+---	--		--		--
+000			ORA		ASL
+001	BIT		AND		ROL
+010	JMPrel		EOR		LSR
+011	JMPabs		ADC		ROR
+100	STY		STA		STX
+101	LDY		LDA		LDX
+110	CPY		CMP		DEC
+111	CPX		SBC		INC
+
+Addressing modes used at 00: zeropage, absolute, indirect, zeropage,x, immediate, absolute,x
+
+The otherwise unfilled bbb=000 host a limited number of irregularly-encoded interrupt instructions (there's still room for more):
+
+aaa	bbb=000 (c=00)
+---	---
+000	BRK			0000 0000
+001	JSRabs			0010 0000
+010	RTI			0100 0000
+011	RTS			0110 0000
+
+Good use has also been made of the fact that 00-instructions do not use addressing modes bbb=010, 100 and 110 .
+
+The bbb=010 instructions host a number of modeless instructions:
+
+aaa	bbb=010 (c=00)
+---	---
+000	PHP
+001	PLP
+010	PHA
+011	PLA
+100	DEY
+101	TAY
+110	INX
+111	INY
+
+The bbb=100 instructions are all branches, with a regular setup:
+- The first two aa numbers select (in order) the Negative, Overflow, Carry and Zero status bits;
+- The remaining a selects wether to test for true (1) or false (0)
+
+The bbb=110 instructions are also modeless:
+
+aaa	bbb=110 (c=00)
+---	---
+000	CLC
+001	SEC
+010	CLI
+011	SEI
+100	TYA
+101	CLV
+110	CLD
+111	SED
+
+
+The same thing happens for cc=10
+
+Here, bbb=010 is the 'accumulator' addressing mode for anything below aaa=100 (=ASL,ROL,LSR,ROR).
+This 'mode' is an irregularity in its own right. From there, four more irregular instructions are added:
+
+
+aaa	bbb=010 (cc-10)
+---	---
+100	TXA	(normally STX)
+101	TAX	(normally LDX)
+110	DEX	(noramlly DEC)
+111	NOP	(normally INC)
+
+The otherwise unused mode bbb=110 hosts the last few operations:
+
+aaa	bbb=110 (cc=10)
+---	---
+100	TXS
+101	TSX
 
 
 Debatable
@@ -47,30 +126,6 @@ JMPabs	4C	010 011 00	=> proper absolute addressing
 JMPind	6C	011 011 00	=> not zero-page indirect, but 'absolute indirect' so unique` form
 
 
-Uncategorized instructions
-
-BRK	00	000 000 00
-JSRabs	20	001 000 00
-RTI	40	010 000 00
-RTS	60	011 000 00
-
-PHP	08	000 010 00
-PLP	28	001 010 00
-PHA	48	010 010 00
-PLA	68	011 010 00
-DEY	88	100 010 00
-TAY	A8	101 010 00
-INY	C8	110 010 00
-INX	E8	111 010 00
-
-CLC	18	000 110 00
-SEC	38	001 110 00
-CLI	58	010 110 00
-SEI	78	011 110 00
-TYA	98	100 110 00
-CLV	B8	101 110 00
-CLD	D8	110 110 00
-SED	F8	111 110 00
 
 TXA	8A	100 010 10
 TXS	9A	100 110 10

@@ -1,0 +1,34 @@
+; code to be run with http://www.6502asm.com/beta/index.html
+
+; this prints the rainbow one 256-wide block at the time
+
+; store start address of screen memory
+; at zero-page $30-$31 (randomly chosen)
+
+lda #$00
+sta $30
+lda #$02
+sta $31
+
+
+; start with color black and increment from there
+; there are only 16 colors, but the overflow doesn't matter
+; Good, because A also doubles as our index for the 256-wide block
+
+lda $00
+
+; print a single 256-wide block
+print256:
+tay
+sta ($30),y
+adc #$01
+bne print256
+; prepare address of next block
+; at zero-page $30-$31
+ldy $31
+iny
+sty $31
+cpy #$06
+bne print256
+rts
+

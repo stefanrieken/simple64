@@ -47,11 +47,14 @@ public class Processor {
 	private void run00 (byte aaa, byte bbb, byte cc) {
 		if (bbb == 0b000) { // break, subroutine, interrupt instructions
 			breakSubroutineInterrupt(aaa);
+		} else if (bbb == 0b010) { // group of modeless instructions
+			modeless1(aaa);
 		} else if (bbb == 0b100) { // branch instructions
 			branch(aaa);
-		} else if (bbb == 0b010) {
-			other(aaa);
+		} else if (bbb == 0b110) { // group of modeless instructions
+			modeless2(aaa);
 		}
+
 		else if (aaa == 0b001) { // BIT
 			alu.bit(a, resolveOperand(bbb,cc));
 		} else if (aaa == 0b010) { // JMP (ind) (unique form of indirection)
@@ -70,12 +73,9 @@ public class Processor {
 		}
 	}
 	
-	// Accumulator operations
+	// Accumulator based calculations (mostly)
 	//
 	private void run01 (byte aaa, byte bbb, byte cc) {
-		if (irregular(aaa, bbb, cc))
-			return;
-
 		if (aaa == 0b000) { // ORA
 			a = alu.or (a, resolveOperand(bbb,cc));
 		} else if (aaa == 0b001) { // AND
@@ -98,14 +98,16 @@ public class Processor {
 	// Memory (sometimes: accumulator) operations
 	//
 	private void run10 (byte aaa, byte bbb, byte cc) {
-		if (aaa == 0b000 || aaa == 0b001) { // ASL, ROL (affects N,Z,C)
-			if (bbb == 0b010) // accumulator
-				a = alu.aslRol(a, aaa == 0b001);
-			else {
-				// read and store in one operation
-				int address = resolveAddress(bbb);
-				mem.set(address, alu.aslRol(mem.get(address), aaa == 0b001));
-			}
+		if (bbb == 0b010) {
+			accumulator(aaa);
+		} else if (bbb == 0b110) {
+			modeless3(aaa);
+		}
+		
+		else if (aaa == 0b000 || aaa == 0b001) { // ASL, ROL (affects N,Z,C)
+			// read and store in one operation
+			int address = resolveAddress(bbb);
+			mem.set(address, alu.aslRol(mem.get(address), aaa == 0b001));
 		} else if (aaa == 0b010 || aaa == 0b011) { // LSR, (affects Z,C) ROR (affects N,Z,C)
 			if (bbb == 0b010) // accumulator
 				a = alu.lsrRor(a, aaa == 0b001);
@@ -163,7 +165,7 @@ public class Processor {
 	}
 
 	// TODO oa registers
-	private void other(byte aaa) {
+	private void modeless1(byte aaa) {
 		if (aaa == 0b000) { // PHP
 			
 		} else if (aaa == 0b001) { // PLP
@@ -173,41 +175,62 @@ public class Processor {
 		} else if (aaa == 0b011) { // PLA
 			
 		} else if (aaa == 0b100) { // DEY
-			y--;
+			y = alu.dec(y);
 		} else if (aaa == 0b101) { // TAY
-			a = y;
+			y = alu.check(y);
 		} else if (aaa == 0b110) { // INX
-			x++;
+			x = alu.inc(x);
 		} else if (aaa == 0b111) { // INY
-			y++;
+			y = alu.inc(y);
 		}
 	}
 
-	// run irregularly encoded calls
-	private boolean irregular(byte aaa, byte bbb, byte cc) {
-		if (aaa == 0b100) {
-			if (bbb == 0b010) { // TXA
-				a = alu.check(x);
-				return true;
-			} else if (bbb == 0b110) { // TXS
-				// TODO
-				return true;
-			}
-		} else if (aaa == 0b101) {
-			if (bbb == 0b010) { // TAX
-				x = alu.check(a);
-				return true;
-			} else if (bbb == 0b110) { // TSX (affects N,Z)
-				// TODO
-				return true;
-			}
-		} else if (aaa == 0b110 && bbb == 0b010) { // DEX (affects N,Z)
-			x = alu.dec(x);
-			return true;
-		} else if (aaa == 0b111 && bbb == 0b010) { // NOP
-			return true;
+	// TODO oa registers
+	private void modeless2(byte aaa) {
+		if (aaa == 0b000) { // CLC
+			
+		} else if (aaa == 0b001) { // SEC
+			
+		} else if (aaa == 0b010) { // CLI
+			
+		} else if (aaa == 0b011) { // SEI
+			
+		} else if (aaa == 0b100) { // TYA
+			a = alu.check(y);
+		} else if (aaa == 0b101) { // CLV
+			
+		} else if (aaa == 0b110) { // CLD
+			
+		} else if (aaa == 0b111) { // SED
+			
 		}
-		return false;
+	}
+	
+	// cc=10 TODO stack
+	private void modeless3(byte aaa) {
+		if (aaa == 0b100) { // TXS
+			
+		} else if (aaa == 0b101) { // TSX
+			
+		}
+	}
+
+	// calls in the 'accumulator' semi-addressing mode, plus other modeless calls
+	private void accumulator(byte aaa) {
+		if (aaa == 0b000 || aaa == 0b001) { // ASLacc / ROLacc
+			a = alu.aslRol(a, aaa == 0b001);
+		} else if (aaa == 0b010 || aaa == 0b011) { // LSRacc / RORacc
+			a = alu.lsrRor(a, aaa == 0b011);
+		} else if (aaa == 0b100) { // TXA
+			a = alu.check(x);
+		} else if (aaa == 0b101) { // TAX
+			x = alu.check(a);
+		} else if (aaa == 0b110) { // DEX
+			x = alu.dec(x);
+		} else if (aaa == 0b111) { // NOP
+			// nope
+		}
+		
 	}
 
 	private short resolveOperand(byte bbb, byte cc) {
@@ -216,7 +239,7 @@ public class Processor {
 				return mem.get(pc++); // immediate
 			else
 				return mem.get(resolveAddress(bbb));
-		} else {
+		} else { // cc == 00, cc == 10
 			if (bbb == 0b000)
 				return mem.get(pc++); // immmediate
 			else

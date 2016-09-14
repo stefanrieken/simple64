@@ -1,0 +1,20 @@
+; code to be run with http://www.6502asm.com/beta/index.html
+
+; this prints the rainbow in 4 parallel 256-wide blocks
+
+; start with color black and increment from there
+; there are only 16 colors, but the overflow doesn't matter
+; Good, because A also doubles as our index
+
+lda $00
+
+print:
+tay
+sta $0200,y
+sta $0300,y
+sta $0400,y
+sta $0500,y
+adc #$01
+bne print
+rts
+
