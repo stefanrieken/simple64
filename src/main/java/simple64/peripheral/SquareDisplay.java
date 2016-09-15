@@ -7,9 +7,11 @@ import java.awt.Graphics;
 
 import javax.swing.JFrame;
 
+import simple64.Memory;
+
 // The display setup from 6502asm.com
 
-public class SquareDisplay implements Peripheral {
+public class SquareDisplay extends Canvas implements Peripheral {
 
 	private Color[] colors = {
 			new Color(0x000000),
@@ -33,18 +35,35 @@ public class SquareDisplay implements Peripheral {
 	private int width = 32;
 	private int pixelSize = 5;
 
-	private Canvas canvas;
+	private Memory mem;
 
-	public SquareDisplay() {
+	public SquareDisplay(Memory mem) {
+		this.mem = mem;
 		makeCanvasWindow();
 	}
 
+	@Override
+	public void paint(Graphics g) {
+		for (int i = 0x0200; i < 0x0600; i++) {
+			paintPixel(g, i, mem.get(i));
+		}
+	};
+
+	private void paintPixel(Graphics g, int address, int value) {
+			int base = address - 0x0200;
+			int x = base % 32;
+			int y = base / 32;
+
+			g.setColor(colors[value & 0x0F]);
+			g.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+	}
+
 	private void makeCanvasWindow() {
-		canvas = new Canvas();
-		canvas.setPreferredSize(new Dimension(width * pixelSize, width * pixelSize));
+		setPreferredSize(new Dimension(width * pixelSize, width * pixelSize));
 		JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(canvas);
+        frame.setResizable(false);
+        frame.add(this);
         frame.pack();
         frame.setVisible(true);
     }
@@ -56,21 +75,7 @@ public class SquareDisplay implements Peripheral {
 
 	@Override
 	public boolean set(int address, short value) {
-		// this should be probably be done in an overwritten paint()
-		// based on existing mem values (plus the last new one)
-		// to avoid repainting artefacts.
-		// for now, at least it shows something!
-		if (address >= 0x0200 && address < 0x0600) {
-			int base = address - 0x0200;
-			int x = base % 32;
-			int y = base / 32;
-
-			Graphics g = canvas.getGraphics();
-			
-			g.setColor(colors[value & 0x0F]);
-			g.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-		}
-
+		paintPixel(getGraphics(), address, value);
 //		try {
 //			// watch paint dry
 //			Thread.sleep(50);

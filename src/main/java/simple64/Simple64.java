@@ -9,7 +9,7 @@ public class Simple64 {
 
 	public static void main (String ... args) {
 		MemoryWithPeripherals mem = new MemoryWithPeripherals();
-		mem.peripherals.add(new SquareDisplay());
+		mem.peripherals.add(new SquareDisplay(mem));
 		
 		Simple64 s = new Simple64();
 		s.load(mem);
@@ -17,7 +17,7 @@ public class Simple64 {
 	}
 	
 	private void load(Memory mem) {
-		InputStream stream = getClass().getResourceAsStream("/rainbow.o65");
+		InputStream stream = getClass().getResourceAsStream("/byterun.o65");
 		
 		int start = 0x0600;
 
