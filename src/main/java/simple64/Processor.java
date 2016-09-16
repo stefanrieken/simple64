@@ -64,6 +64,7 @@ public class Processor {
 		
 		if (opcode == 0x60 && sp == 0xFF) {
 			System.out.println("Exiting on final RTS");
+			return false;
 		}
 
 		// using the description on http://www.llx.com/~nparker/a2/opcodes.html,

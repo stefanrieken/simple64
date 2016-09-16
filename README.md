@@ -13,7 +13,6 @@ The peripherals are configurable, so in theory a different setup can be created.
 Current status
 --------------
 
-In this initial setup, most opcodes are implemented.
-The test cases 'rainbow' and 'rainbow2' run and provide display results.
+The test cases 'rainbow', 'rainbow2' and 'byterun' all run and provide display results.
 Decimal mode is not yet implemented.
 
