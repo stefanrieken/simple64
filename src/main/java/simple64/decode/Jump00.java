@@ -30,26 +30,26 @@ public class Jump00 extends JumpTable {
 	}
 
 	@Override
-	public void if010(byte aaa, byte bbb, byte cc) { // JMP (ind) (unique form of indirection) or RTI
+	public void if010(byte aaa, byte bbb, byte cc) { // JMP (abs) or RTI
 		if (bbb == 0b000) { // RTI
 			p.mnemonic = "RTI";
 			p.sr = p.alu.pull();
+			p.pc = p.alu.pullWord();
+		} else { // JMP (abs)
+			p.mnemonic = "JMP";
+			p.pc = p.resolveAddress((byte) 0b011); // explicitly absolute, because instruction is irregular
+		}
+	}
+
+	@Override
+	public void if011(byte aaa, byte bbb, byte cc) { // JMP (ind) (unique form of indirection) or RTS
+		if (bbb == 0b000) { // RTS
+			p.mnemonic = "RTS";
 			p.pc = p.alu.pullWord();
 		} else { // JMP (ind)
 			p.mnemonic = "JMP";
 			int address = p.resolveAddress(bbb);
 			p.pc = p.mem.get(p.word(p.mem.get(address), p.mem.get(address + 1)));
-		}
-	}
-
-	@Override
-	public void if011(byte aaa, byte bbb, byte cc) { // JMP (abs) or RTS
-		if (bbb == 0b000) { // RTS
-			p.mnemonic = "RTS";
-			p.pc = p.alu.pullWord() + 1;
-		} else { // JMP (abs)
-			p.mnemonic = "JMP";
-			p.pc = p.resolveAddress((byte) 0b011); // explicitly absolute, because instruction is irregular
 		}
 	}
 

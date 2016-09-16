@@ -1,5 +1,10 @@
 ; testing byterun compression
- 
+
+; copied from examples at 6502asm.com,
+; adapted for xa65 .
+
+*=$0600
+
 start:
   lda #<logo
   sta $0

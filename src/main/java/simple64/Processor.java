@@ -62,18 +62,24 @@ public class Processor {
 		opcode = mem.get(pc++);
 			System.out.printf("opcode: %02x\n", opcode);
 		
+		if (opcode == 0x60 && sp == 0xFF) {
+			System.out.println("Exiting on final RTS");
+		}
+
 		// using the description on http://www.llx.com/~nparker/a2/opcodes.html,
 		// split opcode in aaabbbcc
 		byte aaa = (byte) (opcode >> 5);
 		byte bbb = (byte) ((opcode & 0b11100) >> 2);
 		byte cc = (byte) (opcode & 0b11);
 
-		if (cc == 00) run00(aaa, bbb, cc);
-		else if (cc == 01) run01(aaa, bbb, cc);
-		else if (cc == 10) run10(aaa, bbb, cc);
+		if (cc == 0b00) run00(aaa, bbb, cc);
+		else if (cc == 0b01) run01(aaa, bbb, cc);
+		else if (cc == 0b10) run10(aaa, bbb, cc);
 		// cc == 11 is nonexistent
-		
+
 		System.out.println("mnemonic: " + mnemonic);
+		
+		if (opcode == 0) System.out.println("Exiting on BRK");
 		return opcode != 0; // option to, like 6502asm.com, stop on BRK
 	}
 
@@ -177,8 +183,10 @@ public class Processor {
 	
 	public int resolveAddress(byte bbb) {
 		if (bbb == 0b000) { // (zero page,X)
-			// TODO does this wrap?
-			return mem.get(word((short) (mem.get(pc++) + x), (short) 0));
+			// The difference between this one and (zero page), y
+			// is very subtle and lies only in the interpretation further up
+			int zeroPageAddress = word(mem.get(pc++), (short) 0);
+			return word(mem.get(zeroPageAddress), mem.get(zeroPageAddress+1)) + x;
 		} else if (bbb == 0b001) { // zero page
 			return word(mem.get(pc++), (short) 0);
 		} else if (bbb == 0b010) {
@@ -186,7 +194,7 @@ public class Processor {
 		} else if (bbb == 0b011) { // absolute
 			return word(mem.get(pc++), mem.get(pc++));
 		} else if (bbb == 0b100) { // (zero page), y
-			int zeroPageAddress = word((short) (mem.get(pc++)), (short) 0);
+			int zeroPageAddress = word(mem.get(pc++), (short) 0);
 			// looking for the word stored at the two consecutive zero-page locations
 			return word(mem.get(zeroPageAddress), mem.get(zeroPageAddress+1)) + y;
 		} else if (bbb == 0b110) { // absolute, y

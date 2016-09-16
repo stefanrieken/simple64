@@ -92,19 +92,24 @@ public class ArithmeticLogicUnit {
 		sr(p.SIGN, (reg & 0x07) != 0);
 	}
 
-	// Stack operations
+	// Stack operations TODO wrap sp
 	public void push(short value) {
-		p.mem.set(p.word(p.sp++, (short) 0x00), value);
+		System.out.printf("Pushing %02x\n", value);
+		p.mem.set(p.word(p.sp--, (short) 0x00), value);
 	}
 
 	public short pull() {
-		return check(p.mem.get(p.word(p.sp--, (short) 0x00)));
+		short result = check(p.mem.get(p.word(p.sp++, (short) 0x00)));
+		System.out.printf("Pulling %02x\n", result);
+		return result;
 	}
 
 	public int pullWord() {
-		short lo = p.mem.get(p.word(p.sp--, (short) 0x00));
-		short hi = p.mem.get(p.word(p.sp--, (short) 0x00));
-		return p.word(lo, hi);
+		short lo = p.mem.get(p.word(++p.sp, (short) 0x00));
+		short hi = p.mem.get(p.word(++p.sp, (short) 0x00));
+		int result = p.word(lo, hi);
+		System.out.printf("Pulling word %04x\n", result);
+		return result;
 	}
 
 	// test value for flags.
