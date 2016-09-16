@@ -34,17 +34,23 @@ public class Simple64 {
 
 			stream.close();
 			
+			// The ROM reset vector
 			mem.set(0xFFFC, (short) 0x00);
 			mem.set(0xFFFD, (short) 0x06);
-			
+
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 	
 	private void run(Memory mem) {
-		Processor p = new Processor(mem, new ArithmeticLogicUnit());
+		Processor p = new Processor(mem);
 		
+		// Reset the stack pointer to 0xFF
+		// This kind of setup should be done by the reset routine,
+		// but there we jump straight into the program
+		p.sp = 0xFF;
+
 		p.reset();
 		
 		while(p.run()) { }

@@ -16,12 +16,11 @@ public class ArithmeticLogicUnit {
 	// Zero: if result is zero
 	// Carry: if result overflows from bit 7 (= unsigned overflow)
 	
-	short sr;
+	private Processor p;
 
-	short SIGN = 0b10000000;
-	short OVFL = 0b01000000;
-	short ZERO = 0b00000010;
-	short CARY = 0b00000001;
+	public ArithmeticLogicUnit(Processor p) {
+		this.p = p;
+	}
 
 	public short or (short reg, short arg) {
 		return check((short) (reg | arg));
@@ -37,15 +36,15 @@ public class ArithmeticLogicUnit {
 
 	public short adc (short reg, short arg) {
 		short result = (short) (reg + arg);
-		result = check((short) (result + ((sr & CARY) == 0 ? 0 : 1)));
-		set(OVFL, (reg & 0x80) == 0 && (result & 0x80) != 0); // TODO is overflow not set when sign bit changes any direction?
+		result = check((short) (result + ((p.sr & p.CARY) == 0 ? 0 : 1)));
+		sr(p.OVFL, (reg & 0x80) == 0 && (result & 0x80) != 0); // TODO is overflow not set when sign bit changes any direction?
 		return result;
 	}
 
 	public short sbc (short reg, short arg) {
 		short result = (short) (reg - arg);
-		result = check((short) (result - ((sr & CARY) == 0 ? 0 : 1)));
-		set(OVFL, (reg & 0x80) == 0 && (result & 0x80) != 0); // TODO is overflow not set when sign bit changes any direction?
+		result = check((short) (result - ((p.sr & p.CARY) == 0 ? 0 : 1)));
+		sr(p.OVFL, (reg & 0x80) == 0 && (result & 0x80) != 0); // TODO is overflow not set when sign bit changes any direction?
 		return result;
 	}
 
@@ -70,42 +69,57 @@ public class ArithmeticLogicUnit {
 	// a real 'arithmethic' shift should preserve the sign bit
 	// but 6502 doesn't -- it just calls shift-left 'arithmetic' :)
 	public short aslRol(short reg, boolean rotate) {
-		boolean oldCarry = (sr & CARY) != 0;
+		boolean oldCarry = (p.sr & p.CARY) != 0;
 		short result = (short) (reg << 1);
 		boolean newCarry = result > 0xFF;
-		set(CARY, newCarry);
+		sr(p.CARY, newCarry);
 		if (rotate && oldCarry) result &= 0x01; // otherwise it is zero anyway
 		return (short) (result & 0xFF);
 	}
 
 	public short lsrRor(short reg, boolean rotate) {
-		boolean oldCarry = (sr & CARY) != 0;
+		boolean oldCarry = (p.sr & p.CARY) != 0;
 		short result = (short) (reg >> 1);
 		boolean newCarry = (reg & 0x01) != 0;
-		set (CARY, newCarry);
+		sr (p.CARY, newCarry);
 		if (rotate && oldCarry) result &= 0x80; // otherwise it is zero anyway
 		return result;
 	}
 
 	public void bit (short reg, short arg) {
-		set(ZERO, (reg & arg) == 0);
-		set(OVFL, (reg & 0x06) != 0);
-		set(SIGN, (reg & 0x07) != 0);
+		sr(p.ZERO, (reg & arg) == 0);
+		sr(p.OVFL, (reg & 0x06) != 0);
+		sr(p.SIGN, (reg & 0x07) != 0);
+	}
+
+	// Stack operations
+	public void push(short value) {
+		p.mem.set(p.word(p.sp++, (short) 0x00), value);
+	}
+
+	public short pull() {
+		return check(p.mem.get(p.word(p.sp--, (short) 0x00)));
+	}
+
+	public int pullWord() {
+		short lo = p.mem.get(p.word(p.sp--, (short) 0x00));
+		short hi = p.mem.get(p.word(p.sp--, (short) 0x00));
+		return p.word(lo, hi);
 	}
 
 	// test value for flags.
 	// in case of overflow, chop off remainder
 	public short check(short arg) {
-		set(SIGN, (arg & 0x80) != 0);
-		set(ZERO, (arg & 0xFF) == 0);
+		sr(p.SIGN, (arg & 0x80) != 0);
+		sr(p.ZERO, (arg & 0xFF) == 0);
 		// set(OVFL, arg > 255); // can only be checked for if old value is known
-		set(CARY, arg > 255);
+		sr(p.CARY, arg > 255);
 
 		return (short) (arg & 0xFF);
 	}
 
-	private void set(short bit, boolean condition) {
-		if (condition) sr |= bit;
-		else sr &= (0xFF - bit);
+	private void sr(short bit, boolean condition) {
+		if (condition) p.sr |= bit;
+		else p.sr &= (0xFF - bit);
 	}
 }

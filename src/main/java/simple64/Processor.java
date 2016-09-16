@@ -2,15 +2,19 @@ package simple64;
 
 import simple64.decode.Jump00;
 import simple64.decode.Jump00Modeless1;
-import simple64.decode.Jump00Modeless2;
 import simple64.decode.Jump01;
+import simple64.decode.Jump10;
+import simple64.decode.Jump10Accumulator;
 import simple64.decode.JumpTable;
 
 // Most of the work is in the decoding.
 // Wherever 8 different instructions can be decoded, a JumpTable is used.
-// In other cases, currently, an if-construction is still setup
 public class Processor {
 	
+	// debug info
+	public short opcode = 0;
+	public String mnemonic = "";
+
 	// all are implemented as shorts to easier treat them as unsigned bytes
 	public short a;
 	public short x;
@@ -19,10 +23,16 @@ public class Processor {
 	// stack pointer
 	public short sp;
 
-	short SIGN = 0b10000000;
-	short OVFL = 0b01000000;
-	short ZERO = 0b00000010;
-	short CARY = 0b00000001;
+	// status register
+	public short sr;
+
+	public short SIGN = 0b10000000;
+	public short OVFL = 0b01000000;
+	public short BREA = 0b00010000;
+	public short DECI = 0b00001000;
+	public short INTR = 0b00000100;
+	public short ZERO = 0b00000010;
+	public short CARY = 0b00000001;
 
 	public int pc;
 	
@@ -31,13 +41,15 @@ public class Processor {
 	
 	private JumpTable jump00 = new Jump00(this);
 	private JumpTable jump01 = new Jump01(this);
+	private JumpTable jump10 = new Jump10(this);
 
 	private JumpTable jump00modeless1 = new Jump00Modeless1(this);
-	private JumpTable jump00modeless2 = new Jump00Modeless2(this);
 
-	public Processor (Memory memory, ArithmeticLogicUnit alu) {
+	private JumpTable jump10accumulator = new Jump10Accumulator(this);
+
+	public Processor (Memory memory) {
 		this.mem = memory;
-		this.alu = alu;
+		this.alu = new ArithmeticLogicUnit(this);
 	}
 
 	public void reset() {
@@ -46,7 +58,8 @@ public class Processor {
 
 	public boolean run() {
 		System.out.printf("pc: %04x\n", pc);
-		 short opcode = mem.get(pc++);
+		mnemonic = "";
+		opcode = mem.get(pc++);
 			System.out.printf("opcode: %02x\n", opcode);
 		
 		// using the description on http://www.llx.com/~nparker/a2/opcodes.html,
@@ -60,6 +73,7 @@ public class Processor {
 		else if (cc == 10) run10(aaa, bbb, cc);
 		// cc == 11 is nonexistent
 		
+		System.out.println("mnemonic: " + mnemonic);
 		return opcode != 0; // option to, like 6502asm.com, stop on BRK
 	}
 
@@ -68,14 +82,37 @@ public class Processor {
 			jump00modeless1.jump(aaa, aaa, bbb, cc);
 		} else if (bbb == 0b100) { // branch instructions
 			branch(aaa);
-		} else if (bbb == 0b110) { // group of modeless instructions
-			jump00modeless2.jump(aaa, aaa, bbb, cc);
+		} else if (bbb == 0b110) {
+			setBitsInSr(aaa);
 		} else {
 			jump00.jump(aaa, aaa, bbb, cc);
 		}
 	}
 	
-	// Accumulator based calculations (mostly)
+	private void setBitsInSr(short aaa) {
+		if (aaa == 100) { // exception
+			mnemonic = "TYA";
+			a = alu.check(y);
+			return;
+		}
+
+		// xx gives the status bit to clear or set:
+		// 00=CARY,01=INTR,10=SIGN,11=DECI
+		// y indicates set or clear
+		byte xx = (byte) (aaa >> 1);
+		byte y = (byte) (aaa & 0b1);
+		short which = 0;
+
+		if (xx == 0b00) { which = CARY; mnemonic = y == 1 ? "SEC" : "CLC"; };
+		if (xx == 0b01) { which = INTR; mnemonic = y == 1 ? "SEI" : "CLI"; };
+		if (xx == 0b10) { which = OVFL; mnemonic = y == 1 ? "SEV" : "CLV"; }; 
+		if (xx == 0b11) { which = DECI; mnemonic = y == 1 ? "SED" : "CLD"; };
+
+		if (y == 1) sr |= which;
+		else sr &= (0xFF - which);
+	}
+	
+	// ALU operations (mostly)
 	//
 	private void run01 (byte aaa, byte bbb, byte cc) {
 		jump01.jump(aaa, aaa, bbb, cc);
@@ -85,34 +122,11 @@ public class Processor {
 	//
 	private void run10 (byte aaa, byte bbb, byte cc) {
 		if (bbb == 0b010) {
-			accumulator(aaa);
+			jump10accumulator.jump(aaa, aaa, bbb, cc);
 		} else if (bbb == 0b110) {
-			modeless3(aaa);
-		}
-		
-		else if (aaa == 0b000 || aaa == 0b001) { // ASL, ROL (affects N,Z,C)
-			// read and store in one operation
-			int address = resolveAddress(bbb);
-			mem.set(address, alu.aslRol(mem.get(address), aaa == 0b001));
-		} else if (aaa == 0b010 || aaa == 0b011) { // LSR, (affects Z,C) ROR (affects N,Z,C)
-			if (bbb == 0b010) // accumulator
-				a = alu.lsrRor(a, aaa == 0b001);
-			else {
-				// read and store in one operation
-				int address = resolveAddress(bbb);
-				mem.set(address, alu.lsrRor(mem.get(address), aaa == 0b001));
-			}
-		} else if (aaa == 0b100) { // STX
-			mem.set(resolveAddress(bbb), x);
-		} else if (aaa == 0b101) { // LDX
-			x = alu.check(resolveOperand(bbb, cc));
-		} else if (aaa == 0b110) { // DEC
-			 // read and store in one operation
-			int address = resolveAddress(bbb);
-			mem.set(address, alu.dec((short) (mem.get(address))));
-		} else if (aaa == 0b111) { // INC
-			int address = resolveAddress(bbb);
-			mem.set(address, alu.inc((short) (mem.get(address))));
+			modeless2(aaa);
+		} else {
+			jump10.jump(aaa, aaa, bbb, cc);
 		}
 	}
 
@@ -127,40 +141,24 @@ public class Processor {
 		byte relative = (byte) mem.get(pc++);
 
 		boolean test = false;
-		if (xx == 0b00) test = (alu.sr & SIGN) != 0;
-		if (xx == 0b01) test = (alu.sr & OVFL) != 0;
-		if (xx == 0b10) test = (alu.sr & CARY) != 0;
-		if (xx == 0b11) test = (alu.sr & ZERO) != 0;
+		if (xx == 0b00) { test = (sr & SIGN) != 0; mnemonic = y == 1 ? "BMI" : "BPL"; };
+		if (xx == 0b01) { test = (sr & OVFL) != 0; mnemonic = y == 1 ? "BVS" : "BVC"; };
+		if (xx == 0b10) { test = (sr & CARY) != 0; mnemonic = y == 1 ? "BCS" : "BCC"; }; 
+		if (xx == 0b11) { test = (sr & ZERO) != 0; mnemonic = y == 1 ? "BEQ" : "BNE"; };
 
 		if ((test && y == 1) || (!test && y == 0))
 			pc += relative;
 	}
 	
-	// cc=10 TODO stack
-	private void modeless3(byte aaa) {
-		if (aaa == 0b100) { // TXS
-			
-		} else if (aaa == 0b101) { // TSX
-			
+	// cc=10
+	private void modeless2(byte aaa) {
+		if (aaa == 0b100) {
+			mnemonic = "TXS";
+			sp = alu.check(x);
+		} else if (aaa == 0b101) {
+			mnemonic = "TSX";
+			x = alu.check(sp);
 		}
-	}
-
-	// calls in the 'accumulator' semi-addressing mode, plus other modeless calls
-	private void accumulator(byte aaa) {
-		if (aaa == 0b000 || aaa == 0b001) { // ASLacc / ROLacc
-			a = alu.aslRol(a, aaa == 0b001);
-		} else if (aaa == 0b010 || aaa == 0b011) { // LSRacc / RORacc
-			a = alu.lsrRor(a, aaa == 0b011);
-		} else if (aaa == 0b100) { // TXA
-			a = alu.check(x);
-		} else if (aaa == 0b101) { // TAX
-			x = alu.check(a);
-		} else if (aaa == 0b110) { // DEX
-			x = alu.dec(x);
-		} else if (aaa == 0b111) { // NOP
-			// nope
-		}
-		
 	}
 
 	public short resolveOperand(byte bbb, byte cc) {
@@ -202,5 +200,13 @@ public class Processor {
 
 	public int word(short lo, short hi) {
 		return 256 * hi + lo;
+	}
+
+	public short hi (int word) {
+		return (short) (word >> 8);
+	}
+	
+	public short lo (int word) {
+		return (short) (word & 0xFF);
 	}
 }
