@@ -13,7 +13,8 @@ public class MemoryWithPeripherals extends Memory {
 	public short get(int address) {
 		for (Peripheral p : peripherals) {
 			Short result = p.get(address);
-			if (result != null) return result.shortValue();
+			if (result != null)
+				return result.shortValue();
 		}
 
 		return super.get(address);

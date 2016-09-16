@@ -220,6 +220,6 @@ public class Processor {
 	}
 
 	public void log(String format, Object ... args) {
-//		System.out.printf(format, args);
+		System.out.printf(format, args);
 	}
 }

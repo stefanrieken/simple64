@@ -3,6 +3,8 @@ package simple64;
 import java.io.IOException;
 import java.io.InputStream;
 
+import simple64.peripheral.Keyboard;
+import simple64.peripheral.RandomGenerator;
 import simple64.peripheral.SquareDisplay;
 
 public class Simple64 {
@@ -10,6 +12,8 @@ public class Simple64 {
 	public static void main (String ... args) {
 		MemoryWithPeripherals mem = new MemoryWithPeripherals();
 		mem.peripherals.add(new SquareDisplay(mem));
+		mem.peripherals.add(new RandomGenerator());
+		mem.peripherals.add(new Keyboard());
 		
 		Simple64 s = new Simple64();
 		s.load(mem);
