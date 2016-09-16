@@ -94,13 +94,13 @@ public class ArithmeticLogicUnit {
 
 	// Stack operations TODO wrap sp
 	public void push(short value) {
-		System.out.printf("Pushing %02x\n", value);
+		p.log("Pushing %02x\n", value);
 		p.mem.set(p.word(p.sp--, (short) 0x00), value);
 	}
 
 	public short pull() {
 		short result = check(p.mem.get(p.word(p.sp++, (short) 0x00)));
-		System.out.printf("Pulling %02x\n", result);
+		p.log("Pulling %02x\n", result);
 		return result;
 	}
 
@@ -108,7 +108,7 @@ public class ArithmeticLogicUnit {
 		short lo = p.mem.get(p.word(++p.sp, (short) 0x00));
 		short hi = p.mem.get(p.word(++p.sp, (short) 0x00));
 		int result = p.word(lo, hi);
-		System.out.printf("Pulling word %04x\n", result);
+		p.log("Pulling word %04x\n", result);
 		return result;
 	}
 

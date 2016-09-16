@@ -57,13 +57,13 @@ public class Processor {
 	}
 
 	public boolean run() {
-		System.out.printf("pc: %04x\n", pc);
+		log("pc: %04x\n", pc);
 		mnemonic = "";
 		opcode = mem.get(pc++);
-			System.out.printf("opcode: %02x\n", opcode);
+			log("opcode: %02x\n", opcode);
 		
 		if (opcode == 0x60 && sp == 0xFF) {
-			System.out.println("Exiting on final RTS");
+			log("Exiting on final RTS\n");
 			return false;
 		}
 
@@ -78,9 +78,9 @@ public class Processor {
 		else if (cc == 0b10) run10(aaa, bbb, cc);
 		// cc == 11 is nonexistent
 
-		System.out.println("mnemonic: " + mnemonic);
+		log("mnemonic: %s\n", mnemonic);
 		
-		if (opcode == 0) System.out.println("Exiting on BRK");
+		if (opcode == 0) log("Exiting on BRK\n");
 		return opcode != 0; // option to, like 6502asm.com, stop on BRK
 	}
 
@@ -97,7 +97,7 @@ public class Processor {
 	}
 	
 	private void setBitsInSr(short aaa) {
-		if (aaa == 100) { // exception
+		if (aaa == 0b100) { // exception
 			mnemonic = "TYA";
 			a = alu.check(y);
 			return;
@@ -217,5 +217,9 @@ public class Processor {
 	
 	public short lo (int word) {
 		return (short) (word & 0xFF);
+	}
+
+	public void log(String format, Object ... args) {
+//		System.out.printf(format, args);
 	}
 }

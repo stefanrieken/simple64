@@ -17,7 +17,7 @@ public class Simple64 {
 	}
 	
 	private void load(Memory mem) {
-		InputStream stream = getClass().getResourceAsStream("/byterun.o65");
+		InputStream stream = getClass().getResourceAsStream("/compiled/demoscene.o65");
 		
 		int start = 0x0600;
 
@@ -53,6 +53,12 @@ public class Simple64 {
 
 		p.reset();
 		
-		while(p.run()) { }
+		long time = System.nanoTime();
+		long timePassed;
+
+		while(p.run()) {
+			do { timePassed = System.nanoTime() - time; } while (timePassed < 50000);
+			time = System.nanoTime();
+		}
 	}
 }

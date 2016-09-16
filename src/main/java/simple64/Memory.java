@@ -10,7 +10,7 @@ public class Memory {
 	}
 	
 	public void set(int address, short value) {
-		System.out.printf("%04x = %02x\n", address, value);
+//		System.out.printf("%04x = %02x\n", address, value);
 		mem[address] = (byte) value;
 	}
 }
