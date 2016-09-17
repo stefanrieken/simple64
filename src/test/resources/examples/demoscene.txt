@@ -139,6 +139,7 @@ n1:
 done:
   rts
 
+; *=06f5
 picture:
   .byt 0,0,0,0,0,0,0,0,0,$b,$b,$c,$f,$f,$f,$f
   .byt $f,$b,0,0,0,$b,$b,$c,$c,$f,$f,$b,0,0,0,0
@@ -188,7 +189,7 @@ picture:
   .byt $c,$c,$b,$b,$b,$b,$c,$c,$f,$f,$f,$c,$c,$c,$c,$c
   .byt $ff
 
-
+; *=09d6
 fontSize:
   .byt 5,5,5,5,5,5,5,5 ;abcdefgh
   .byt 2,5,5,5,6,6,5,5 ;ijklmnop
@@ -199,6 +200,7 @@ fontSize:
 ; a=0, b=1, c=2, d=3....
 ;
 
+; *=09f2
 scrolltext:
   .byt 0
 
@@ -227,6 +229,7 @@ scrolltext:
 
   .byt $ff                      ; end of text
 
+; *=0a66
 fontlookup:
   .byt $00,$00 ;a
   .byt $20,$00 ;b
@@ -257,6 +260,7 @@ fontlookup:
   .byt $40,$03 ;.
   .byt $60,$03 ;" "
 
+; *=09ae
 fonts:
   .byt 0,1,1,0,0,0
   .byt 1,0,0,1,0,0

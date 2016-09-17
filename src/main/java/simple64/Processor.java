@@ -201,7 +201,9 @@ public class Processor {
 		} else if (bbb == 0b110) { // absolute, y
 			return word(mem.get(pc++), mem.get(pc++)) + y;
 		} else if (bbb == 0b111) { // absolute, x
-			return word(mem.get(pc++), mem.get(pc++)) + x;
+			int address=word(mem.get(pc++), mem.get(pc++));
+			System.out.printf("address: %04x\n", address);
+			return address + x;
 		}
 		
 		return 0; // shouldn't get here

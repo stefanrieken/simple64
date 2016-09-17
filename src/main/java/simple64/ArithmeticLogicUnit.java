@@ -36,14 +36,18 @@ public class ArithmeticLogicUnit {
 
 	public short adc (short reg, short arg) {
 		short result = (short) (reg + arg);
-		result = check((short) (result + ((p.sr & p.CARY) == 0 ? 0 : 1)));
+		result = (short) (result + ((p.sr & p.CARY) == 0 ? 0 : 1));
+		sr(p.CARY, result > 255);
+		result = check(result);
 		sr(p.OVFL, (reg & 0x80) == 0 && (result & 0x80) != 0); // TODO is overflow not set when sign bit changes any direction?
 		return result;
 	}
 
 	public short sbc (short reg, short arg) {
 		short result = (short) (reg - arg);
-		result = check((short) (result - ((p.sr & p.CARY) == 0 ? 0 : 1)));
+		result = (short) (result - ((p.sr & p.CARY) == 0 ? 0 : 1));
+		sr(p.CARY, result > 255);
+		result = check(result);
 		sr(p.OVFL, (reg & 0x80) == 0 && (result & 0x80) != 0); // TODO is overflow not set when sign bit changes any direction?
 		return result;
 	}
@@ -63,7 +67,9 @@ public class ArithmeticLogicUnit {
 	}
 
 	public void cmp (short reg, short arg) {
-		check((short) (reg - arg));
+		short result = (short) (reg-arg);
+		check(result);
+		sr(p.CARY, result > 255);
 	}
 	
 	// a real 'arithmethic' shift should preserve the sign bit
@@ -118,7 +124,7 @@ public class ArithmeticLogicUnit {
 		sr(p.SIGN, (arg & 0x80) != 0);
 		sr(p.ZERO, (arg & 0xFF) == 0);
 		// set(OVFL, arg > 255); // can only be checked for if old value is known
-		sr(p.CARY, arg > 255);
+		// sr(p.CARY, arg > 255); // is only altered by compare and rotate instructions
 
 		return (short) (arg & 0xFF);
 	}
