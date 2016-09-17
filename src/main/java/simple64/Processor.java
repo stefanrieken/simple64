@@ -184,10 +184,10 @@ public class Processor {
 	
 	public int resolveAddress(byte bbb) {
 		if (bbb == 0b000) { // (zero page,X)
-			// The difference between this one and (zero page), y
-			// is very subtle and lies only in the interpretation further up
-			int zeroPageAddress = word(mem.get(pc++), (short) 0);
-			return word(mem.get(zeroPageAddress), mem.get(zeroPageAddress+1)) + x;
+			// Turns out that in the examples this mode is mostly used
+			// with x=0, which hides the subtle difference with (zp),y
+			int zeroPageAddress = word(mem.get(pc++), (short) 0) + x;
+			return word(mem.get(zeroPageAddress), mem.get(zeroPageAddress+1));
 		} else if (bbb == 0b001) { // zero page
 			return word(mem.get(pc++), (short) 0);
 		} else if (bbb == 0b010) {
