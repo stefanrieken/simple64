@@ -49,7 +49,7 @@ public class Jump00 extends JumpTable {
 		} else { // JMP (ind)
 			p.mnemonic = "JMP";
 			int address = p.resolveAddress(bbb);
-			p.pc = p.mem.get(p.word(p.mem.get(address), p.mem.get(address + 1)));
+			p.pc = p.word(p.mem.get(address), p.mem.get(address + 1));
 		}
 	}
 

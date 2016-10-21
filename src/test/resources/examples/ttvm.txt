@@ -1,0 +1,147 @@
+; Token-threaded VM proof-of-concept implementation
+;
+; Made to work with my Simple64 virtual 6502 implementation,
+; which in turn is inspired on 6502asm.com .
+;
+; (But set to compile with xa65.)
+;
+; For this reason, output consists of colors on 6502asm.com 'screen'.
+;
+; To run this code on the actual 6502asm.com instead:
+; - Get a 'version' of the JS (there are actually some derived implementations
+;   out there) that actually supports indirect jumps
+; - convert .byt and .word (direct values) to 'dcb' and / or similar statements
+;
+
+; Basic organisation:
+; - zero-page $02/$03 hold the fixed address of the lookup table for access through (zp),y
+; - zero-page $04/$05 hold the 'program counter' (16-bit, to support arbitrarily large programs)
+; - zero-page $06/$07 hold the jump address for the current instruction
+
+#define lt $02
+#define pc $04
+#define jumpaddress $06
+
+; 'User' variables:
+; - zero-page $40 holds the index of the current pixel to paint
+; - zero-page $80 and up hold various counters (but at this point only counter zero is implemented)
+#define counter $80
+
+*=$0600
+
+; setup system stack (which we're only using for jsr/rts; we don't support any other stack stuff)
+  ldx #$ff
+  txs
+
+; store lookuptable pointer
+  lda #<lookuptable
+  sta lt
+  lda #>lookuptable
+  sta lt+1
+
+; start pc
+  lda #<code
+  sta $04
+  lda #>code
+  sta $05
+
+  jmp current
+
+next:
+  inc $04              ; increment pc (technique from nesdev.com '16-bit increment and decrement')
+  bne current          ; skip 'hi' if not rolled over to zero
+  inc $05
+current:
+  ldy $0
+  lda ($04),y          ; load current 1-byte instruction using address at 'pc'
+  asl                  ; multiply by two to get a word-based index in the lookuptable
+  tay
+  lda ($02),y          ; use it to lookup the lo of the jump address
+  sta $06              ; and store it
+  iny
+  lda ($02),y          ; then the hi
+  sta $07
+  jmp ($0006)          ; and jump!
+
+decrement_pc:
+  lda $04
+  bne decrement_lsb
+  dec $05
+decrement_lsb:
+  dec $04
+  rts
+
+fetch_next_arg:        ; This does either 'fetch next arg' or
+increment_pc:          ; 'increment pc' with the side effect of modifying x and a
+  inc $04
+  bne refetch_arg
+  inc $05
+refetch_arg:           ; can be called independently to refetch
+  ldx #$0
+  lda ($04,x)
+  rts
+
+break_token:
+  rts
+
+; fill with color based on index
+rainbow_token:
+  lda $40
+  ldx $40
+  sta $0200,x
+  inx
+  stx $40
+  jmp next
+
+; fill with color based on arg
+fill_token:
+  jsr fetch_next_arg
+  ldx $40
+  sta $0200,x
+  inx
+  stx $40
+  jmp next
+
+count_token:
+  jsr fetch_next_arg
+  sta counter
+  jmp next
+
+loop_token:
+  jsr fetch_next_arg
+  tay
+  dec counter
+  beq loop_done
+decrement:
+  jsr decrement_pc
+  dey
+  bne decrement
+loop_done:
+  jmp next
+
+lookuptable:
+  .word break_token; unsure about the equivalent syntax for 6502asm.com
+  .word rainbow_token
+  .word fill_token
+  .word count_token
+  .word loop_token
+
+; the same lookup table as xa65 preprocessor instructions,
+; to ease reading of the 'code' block that follows
+; prefixed so as not to confuse with existing labels and codes
+
+#define c_break      0
+#define c_rainbow    1
+#define c_fill       2
+#define c_count      3
+#define c_loop       4
+
+code:
+  .byt c_count, 128
+  .byt c_fill, 2
+  .byt c_loop, 4        ; pc = pc-4 if count != 0
+  .byt c_count, 128
+  .byt c_rainbow
+  .byt c_loop, 3        ; pc = pc-3 if count != 0
+  .byt c_break
+

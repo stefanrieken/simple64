@@ -21,7 +21,7 @@ public class Simple64 {
 	}
 	
 	private void load(Memory mem) {
-		InputStream stream = getClass().getResourceAsStream("/compiled/demoscene.o65");
+		InputStream stream = getClass().getResourceAsStream("/compiled/ttvm.o65");
 		
 		int start = 0x0600;
 
