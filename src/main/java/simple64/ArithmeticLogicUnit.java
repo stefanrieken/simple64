@@ -105,7 +105,7 @@ public class ArithmeticLogicUnit {
 	}
 
 	public short pull() {
-		short result = check(p.mem.get(p.word(p.sp++, (short) 0x01)));
+		short result = check(p.mem.get(p.word(++p.sp, (short) 0x01)));
 		p.log("Pulling %02x\n", result);
 		return result;
 	}
